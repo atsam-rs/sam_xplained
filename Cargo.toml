@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "sam4e_xplained_pro",
+    "sam4s_xplained_pro",
+]
