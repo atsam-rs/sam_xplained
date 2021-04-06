@@ -1,16 +1,16 @@
 [package]
 name = "sam4s_xplained_pro"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["John W. Terrell <john@coolpeoplenetworks.com>"]
 edition = "2018"
 description = "Board support crate for the Microchip/Atmel SAM4S_XPlained_Pro development board"
 keywords = ["arm", "cortex-m", "atsam4", "atsam4s", "atsam4sd32c", "hal"]
 categories = ["embedded", "hardware-support", "no-std"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/atsam4-rs/sam4s_xplained_pro"
+repository = "https://github.com/atsam4-rs/sam4_xplained"
 
 [dependencies]
-cortex-m = "0.6.3"
+cortex-m = "0.7.2"
 embedded-hal = "~0.2.4"
 nb = "~0.1"
 cortex-m-semihosting = "~0.3"
@@ -34,12 +34,12 @@ optional = true
 features = ["jlink-quirks"]
 
 [dependencies.atsam4-hal]
-version = "0.1.5"
+version = "0.1.7"
 default-features = false
 features = ["atsam4sd32c"]
 
 [features]
-default = ["rt", "panic_semihosting", "atsam4-hal/disable_watchdog_timer"]
+default = ["rt", "panic_semihosting"]
 rt = ["cortex-m-rt"]
 panic_halt = ["panic-halt"]
 panic_abort = ["panic-abort"]

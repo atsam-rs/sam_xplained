@@ -1,15 +1,11 @@
 #![no_main]
 #![no_std]
 
-use panic_semihosting as _; // panic handler
 use cortex_m_semihosting::hprintln;
-use sam4s_xplained_pro::{
-    hal::*,
-    hal::gpio::*,
-    hal::pac::Peripherals,
-};
+use panic_semihosting as _; // panic handler
 use rtic::app;
 use rtic::cyccnt::{Instant, U32Ext as _};
+use sam4s_xplained_pro::{hal::gpio::*, hal::pac::Peripherals, hal::*};
 
 #[app(device = sam4s_xplained_pro::hal::pac, monotonic = rtic::cyccnt::CYCCNT)]
 const APP: () = {
@@ -32,27 +28,36 @@ const APP: () = {
         cx.core.DWT.enable_cycle_counter();
 
         // Task scheduling
-        cx.schedule.blink_led(cx.start + clock::get_master_clock_frequency().0.cycles()).unwrap();
+        cx.schedule
+            .blink_led(cx.start + clock::get_master_clock_frequency().0.cycles())
+            .unwrap();
 
         // Resource creation
         let peripherals = Peripherals::take().unwrap();
         let clocks = clock::ClockController::new();
         let gpio_ports = gpio::Ports::new(
-            peripherals.PIOA, 
-            clocks.peripheral_clocks.parallel_io_controller_a.into_enabled_clock(),
-            peripherals.PIOB, 
-            clocks.peripheral_clocks.parallel_io_controller_b.into_enabled_clock(),
-            peripherals.PIOC, 
-            clocks.peripheral_clocks.parallel_io_controller_c.into_enabled_clock(),
+            peripherals.PIOA,
+            clocks
+                .peripheral_clocks
+                .parallel_io_controller_a
+                .into_enabled_clock(),
+            peripherals.PIOB,
+            clocks
+                .peripheral_clocks
+                .parallel_io_controller_b
+                .into_enabled_clock(),
+            peripherals.PIOC,
+            clocks
+                .peripheral_clocks
+                .parallel_io_controller_c
+                .into_enabled_clock(),
         );
         let mut pins = sam4s_xplained_pro::Pins::new(gpio_ports);
 
         // Turn LED0 off.
         pins.led0.set_high().ok();
 
-        init::LateResources {
-            led0: pins.led0,
-        }
+        init::LateResources { led0: pins.led0 }
     }
 
     //
@@ -64,12 +69,15 @@ const APP: () = {
 
         if *STATE == false {
             cx.resources.led0.set_low().ok();
-            cx.schedule.blink_led(Instant::now() + (clock::get_master_clock_frequency().0 / 20).cycles()).unwrap();
+            cx.schedule
+                .blink_led(Instant::now() + (clock::get_master_clock_frequency().0 / 20).cycles())
+                .unwrap();
             *STATE = true;
-        }
-        else {
+        } else {
             cx.resources.led0.set_high().ok();
-            cx.schedule.blink_led(Instant::now() + (clock::get_master_clock_frequency().0 / 2).cycles()).unwrap();
+            cx.schedule
+                .blink_led(Instant::now() + (clock::get_master_clock_frequency().0 / 2).cycles())
+                .unwrap();
             *STATE = false;
         }
     }
@@ -78,6 +86,6 @@ const APP: () = {
     // using software tasks; these free interrupts will be used to dispatch the
     // software tasks.
     extern "C" {
-        fn TC5();    // Timer/Count #5
+        fn TC5(); // Timer/Count #5
     }
 };

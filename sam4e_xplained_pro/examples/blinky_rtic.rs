@@ -104,6 +104,6 @@ const APP: () = {
     // using software tasks; these free interrupts will be used to dispatch the
     // software tasks.
     extern "C" {
-        fn ID_TC5(); // Timer/Count #5
+        fn TC5(); // Timer/Count #5
     }
 };

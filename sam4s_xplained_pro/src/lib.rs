@@ -3,10 +3,7 @@
 pub use atsam4_hal as hal;
 use paste::paste;
 
-use atsam4_hal::{
-    define_pin_map,
-    gpio::*,
-};
+use atsam4_hal::{define_pin_map, gpio::*};
 
 define_pin_map! {
     struct Pins,
@@ -72,6 +69,6 @@ define_pin_map! {
 
     pin a21 = c16<PfA, into_peripheral_function_a>,
     pin a22 = c17<PfA, into_peripheral_function_a>,
-    
+
     pin a23 = a25<PfC, into_peripheral_function_c>,
 }

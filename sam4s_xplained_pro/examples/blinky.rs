@@ -9,20 +9,10 @@ use cortex_m_semihosting::hprintln;
 
 use sam4s_xplained_pro::{
     hal::{
-        pac::{
-            CorePeripherals,
-            Peripherals, 
-        },
-        clock::{
-            ClockController,
-        },
-        delay::{
-            Delay,
-            DelayMs,
-        },
-        gpio::{
-            Ports,
-        },
+        clock::ClockController,
+        delay::{Delay, DelayMs},
+        gpio::Ports,
+        pac::{CorePeripherals, Peripherals},
         OutputPin,
     },
     Pins,
@@ -44,15 +34,25 @@ fn main() -> ! {
         3 => hprintln!("Reset cause: Software"),
         4 => hprintln!("Reset cause: NRST pin detected low"),
         _ => hprintln!("Reset cause: RESERVED RESET VALUE!!"),
-    }.ok();
+    }
+    .ok();
 
     let gpio_ports = Ports::new(
-        peripherals.PIOA, 
-        clocks.peripheral_clocks.parallel_io_controller_a.into_enabled_clock(),
-        peripherals.PIOB, 
-        clocks.peripheral_clocks.parallel_io_controller_b.into_enabled_clock(),
-        peripherals.PIOC, 
-        clocks.peripheral_clocks.parallel_io_controller_c.into_enabled_clock(),
+        peripherals.PIOA,
+        clocks
+            .peripheral_clocks
+            .parallel_io_controller_a
+            .into_enabled_clock(),
+        peripherals.PIOB,
+        clocks
+            .peripheral_clocks
+            .parallel_io_controller_b
+            .into_enabled_clock(),
+        peripherals.PIOC,
+        clocks
+            .peripheral_clocks
+            .parallel_io_controller_c
+            .into_enabled_clock(),
     );
     let mut pins = Pins::new(gpio_ports);
     let mut delay = Delay::new(core.SYST);
