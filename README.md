@@ -7,7 +7,7 @@ Currently the following boards are supported:
 * SAM4S_XPlained_Pro
 
 ## Running the examples using OpenOCD
-1) Ensure your development board is connect.
+1) Ensure your development board is connected.
 2) Change to the directory that corresponds to your development board.
 3) Start OpenOCD in a separate terminal window - This should show a valid connection to the board.   This will be the terminal
    where the semihosting output is displayed.
