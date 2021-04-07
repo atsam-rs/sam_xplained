@@ -1,11 +1,14 @@
-#![no_main]
 #![no_std]
+#![no_main]
 
 use cortex_m_semihosting::hprintln;
 use panic_semihosting as _; // panic handler
 use rtic::app;
 use rtic::cyccnt::{Instant, U32Ext as _};
-use sam4s_xplained_pro::{hal::gpio::*, hal::pac::Peripherals, hal::*};
+use sam4s_xplained_pro::{
+    hal::{clock::*, gpio::*, pac::Peripherals, watchdog::*, OutputPin},
+    Pins,
+};
 
 #[app(device = sam4s_xplained_pro::hal::pac, monotonic = rtic::cyccnt::CYCCNT)]
 const APP: () = {
@@ -13,7 +16,7 @@ const APP: () = {
     // Resources used by tasks/interrupts
     //
     struct Resources {
-        led0: gpio::Pc23<Output<OpenDrain>>,
+        led0: Pc23<Output<OpenDrain>>,
     }
 
     //
@@ -21,7 +24,7 @@ const APP: () = {
     //
     #[init(schedule = [blink_led])]
     fn init(mut cx: init::Context) -> init::LateResources {
-        hprintln!("CPU Clock: {}", clock::get_master_clock_frequency().0).ok();
+        hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
 
         // Initialize (enable) the monotonic timer (CYCCNT)
         cx.core.DCB.enable_trace();
@@ -29,30 +32,38 @@ const APP: () = {
 
         // Task scheduling
         cx.schedule
-            .blink_led(cx.start + clock::get_master_clock_frequency().0.cycles())
+            .blink_led(cx.start + get_master_clock_frequency().0.cycles())
             .unwrap();
 
         // Resource creation
         let peripherals = Peripherals::take().unwrap();
-        let clocks = clock::ClockController::new();
-        let gpio_ports = gpio::Ports::new(
-            peripherals.PIOA,
-            clocks
-                .peripheral_clocks
-                .parallel_io_controller_a
-                .into_enabled_clock(),
-            peripherals.PIOB,
-            clocks
-                .peripheral_clocks
-                .parallel_io_controller_b
-                .into_enabled_clock(),
-            peripherals.PIOC,
-            clocks
-                .peripheral_clocks
-                .parallel_io_controller_c
-                .into_enabled_clock(),
+        let clocks = ClockController::new(
+            peripherals.PMC,
+            &peripherals.SUPC,
+            &peripherals.EFC0,
+            &peripherals.EFC1,
+            MainClock::RcOscillator12Mhz,
+            SlowClock::RcOscillator32Khz,
         );
-        let mut pins = sam4s_xplained_pro::Pins::new(gpio_ports);
+
+        let gpio_ports = Ports::new(
+            (
+                peripherals.PIOA,
+                clocks.peripheral_clocks.pio_a.into_enabled_clock(),
+            ),
+            (
+                peripherals.PIOB,
+                clocks.peripheral_clocks.pio_b.into_enabled_clock(),
+            ),
+            (
+                peripherals.PIOC,
+                clocks.peripheral_clocks.pio_c.into_enabled_clock(),
+            ),
+        );
+        let mut pins = Pins::new(gpio_ports);
+
+        // Disable the watchdog timer.
+        Watchdog::new(peripherals.WDT).disable();
 
         // Turn LED0 off.
         pins.led0.set_high().ok();
@@ -70,13 +81,13 @@ const APP: () = {
         if *STATE == false {
             cx.resources.led0.set_low().ok();
             cx.schedule
-                .blink_led(Instant::now() + (clock::get_master_clock_frequency().0 / 20).cycles())
+                .blink_led(Instant::now() + (get_master_clock_frequency().0 / 20).cycles())
                 .unwrap();
             *STATE = true;
         } else {
             cx.resources.led0.set_high().ok();
             cx.schedule
-                .blink_led(Instant::now() + (clock::get_master_clock_frequency().0 / 2).cycles())
+                .blink_led(Instant::now() + (get_master_clock_frequency().0 / 2).cycles())
                 .unwrap();
             *STATE = false;
         }
