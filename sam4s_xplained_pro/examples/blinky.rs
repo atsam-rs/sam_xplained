@@ -44,17 +44,17 @@ fn main() -> ! {
 
     let gpio_ports = Ports::new(
         (
-        peripherals.PIOA,
-        clocks.peripheral_clocks.pio_a.into_enabled_clock(),
-    ),
-    (
-        peripherals.PIOB,
-        clocks.peripheral_clocks.pio_b.into_enabled_clock(),
-    ),
-    (
-        peripherals.PIOC,
-        clocks.peripheral_clocks.pio_c.into_enabled_clock(),
-    ),
+            peripherals.PIOA,
+            clocks.peripheral_clocks.pio_a.into_enabled_clock(),
+        ),
+        (
+            peripherals.PIOB,
+            clocks.peripheral_clocks.pio_b.into_enabled_clock(),
+        ),
+        (
+            peripherals.PIOC,
+            clocks.peripheral_clocks.pio_c.into_enabled_clock(),
+        ),
     );
     let mut pins = Pins::new(gpio_ports);
     let mut delay = Delay::new(core.SYST);
