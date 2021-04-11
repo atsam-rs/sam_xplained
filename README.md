@@ -1,4 +1,4 @@
-# sam4_xplained
+# sam_xplained
 
 Embedded Rust support crate for several Microchip/Atmel XPlained development boards.
 
