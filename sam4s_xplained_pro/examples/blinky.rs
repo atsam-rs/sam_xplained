@@ -6,6 +6,7 @@ use cortex_m_semihosting::hprintln;
 use panic_semihosting as _; // panic handler
 use sam4s_xplained_pro::{
     hal::{
+        chipid::*,
         clock::*,
         delay::{Delay, DelayMs},
         gpio::*,
@@ -41,6 +42,9 @@ fn main() -> ! {
         _ => hprintln!("Reset cause: RESERVED RESET VALUE!!"),
     }
     .ok();
+
+    let chipid = ChipId::new(peripherals.CHIPID);
+    hprintln!("ChipID: {:?}", chipid).ok();
 
     let gpio_ports = Ports::new(
         (

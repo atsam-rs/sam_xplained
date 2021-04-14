@@ -1,6 +1,6 @@
 [package]
 name = "sam4s_xplained_pro"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["John W. Terrell <john@coolpeoplenetworks.com>"]
 edition = "2018"
 description = "Board support crate for the Microchip/Atmel SAM4S_XPlained_Pro development board"
@@ -34,7 +34,7 @@ optional = true
 features = ["jlink-quirks"]
 
 [dependencies.atsam4-hal]
-version = "0.1.7"
+version = "0.1.13"
 default-features = false
 features = ["atsam4sd32c"]
 
@@ -48,6 +48,3 @@ use_semihosting = []
 
 [dev-dependencies.cortex-m-rtic]
 version = "0.5.5"
-
-# [patch.crates-io]
-# atsam4-hal = { path = "../atsam4-hal" }

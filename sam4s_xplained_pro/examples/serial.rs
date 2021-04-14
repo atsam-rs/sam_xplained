@@ -11,7 +11,7 @@ use sam4s_xplained_pro::{
         gpio::*,
         pac::{CorePeripherals, Peripherals},
         serial::Serial1,
-        time::U32Ext,
+        time::rate::*,
         watchdog::*,
         OutputPin,
     },
@@ -69,7 +69,7 @@ fn main() -> ! {
         clocks.peripheral_clocks.uart_1.into_enabled_clock(),
         pins.uart1_rx,
         pins.uart1_tx,
-        115200_u32.bps(),
+        BitsPerSecond(115200_u32),
         None,
     );
 

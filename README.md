@@ -4,6 +4,7 @@ Embedded Rust support crate for several Microchip/Atmel XPlained development boa
 
 Currently the following boards are supported:
 * SAM4E_XPlained_Pro
+* SAM4N_XPlained_Pro
 * SAM4S_XPlained_Pro
 
 ## Running the examples using OpenOCD

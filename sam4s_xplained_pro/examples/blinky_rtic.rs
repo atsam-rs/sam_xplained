@@ -24,8 +24,6 @@ const APP: () = {
     //
     #[init(schedule = [blink_led])]
     fn init(mut cx: init::Context) -> init::LateResources {
-        hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
-
         // Initialize (enable) the monotonic timer (CYCCNT)
         cx.core.DCB.enable_trace();
         cx.core.DWT.enable_cycle_counter();
@@ -45,6 +43,8 @@ const APP: () = {
             MainClock::RcOscillator12Mhz,
             SlowClock::RcOscillator32Khz,
         );
+
+        hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
 
         let gpio_ports = Ports::new(
             (

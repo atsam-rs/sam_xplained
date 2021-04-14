@@ -4,7 +4,7 @@
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 use panic_semihosting as _; // panic handler
-use sam4e_xplained_pro::{
+use sam4n_xplained_pro::{
     hal::{
         clock::*,
         delay::{Delay, DelayMs},
@@ -28,7 +28,7 @@ fn main() -> ! {
         peripherals.PMC,
         &peripherals.SUPC,
         &peripherals.EFC,
-        MainClock::RcOscillator12Mhz,
+        MainClock::RcOscillator8Mhz,
         SlowClock::RcOscillator32Khz,
     );
 
@@ -57,14 +57,6 @@ fn main() -> ! {
         (
             peripherals.PIOC,
             clocks.peripheral_clocks.pio_c.into_enabled_clock(),
-        ),
-        (
-            peripherals.PIOD,
-            clocks.peripheral_clocks.pio_d.into_enabled_clock(),
-        ),
-        (
-            peripherals.PIOE,
-            clocks.peripheral_clocks.pio_e.into_enabled_clock(),
         ),
     );
     let mut pins = Pins::new(gpio_ports);

@@ -6,6 +6,7 @@ use cortex_m_semihosting::hprintln;
 use panic_semihosting as _; // panic handler
 use sam4e_xplained_pro::{
     hal::{
+        chipid::*,
         clock::*,
         delay::{Delay, DelayMs},
         gpio::*,
@@ -41,6 +42,11 @@ fn main() -> ! {
     }
     .ok();
 
+    hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
+
+    let chipid = ChipId::new(peripherals.CHIPID);
+    hprintln!("ChipID: {:?}", chipid).ok();
+    
     let gpio_ports = Ports::new(
         (
             peripherals.PIOA,

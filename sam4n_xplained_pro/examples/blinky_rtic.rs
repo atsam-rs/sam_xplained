@@ -5,18 +5,18 @@ use cortex_m_semihosting::hprintln;
 use panic_semihosting as _; // panic handler
 use rtic::app;
 use rtic::cyccnt::{Instant, U32Ext as _};
-use sam4e_xplained_pro::{
+use sam4n_xplained_pro::{
     hal::{clock::*, gpio::*, pac::Peripherals, watchdog::*, OutputPin},
     Pins,
 };
 
-#[app(device = sam4e_xplained_pro::hal::pac, monotonic = rtic::cyccnt::CYCCNT)]
+#[app(device = sam4n_xplained_pro::hal::pac, monotonic = rtic::cyccnt::CYCCNT)]
 const APP: () = {
     //
     // Resources used by tasks/interrupts
     //
     struct Resources {
-        led0: Pd22<Output<OpenDrain>>,
+        led0: Pb14<Output<OpenDrain>>,
     }
 
     //
@@ -39,7 +39,7 @@ const APP: () = {
             peripherals.PMC,
             &peripherals.SUPC,
             &peripherals.EFC,
-            MainClock::RcOscillator12Mhz,
+            MainClock::RcOscillator8Mhz,
             SlowClock::RcOscillator32Khz,
         );
 
@@ -57,14 +57,6 @@ const APP: () = {
             (
                 peripherals.PIOC,
                 clocks.peripheral_clocks.pio_c.into_enabled_clock(),
-            ),
-            (
-                peripherals.PIOD,
-                clocks.peripheral_clocks.pio_d.into_enabled_clock(),
-            ),
-            (
-                peripherals.PIOE,
-                clocks.peripheral_clocks.pio_e.into_enabled_clock(),
             ),
         );
         let mut pins = Pins::new(gpio_ports);
