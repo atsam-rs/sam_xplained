@@ -1,8 +1,6 @@
 # SAM4E Xplained Pro Board Crate
 Embedded Rust Board Support Crate for the Microchip/Atmel SAM4E_XPlained_Pro development board.
 
-[![Build Status](https://www.travis-ci.com/atsam4-rs/sam4e_xplained_pro.svg?branch=master)](https://www.travis-ci.com/github/atsam4-rs/sam4e_xplained_pro)
-
 NOTE: This crate is still under active development.
 
 ## License
