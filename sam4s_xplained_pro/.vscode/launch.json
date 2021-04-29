@@ -1,0 +1,33 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "jlink",
+            "cwd": "${workspaceRoot}",
+            "executable": "./target/thumbv7em-none-eabihf/debug/examples/blinky",
+            "name": "Debug (GDB Server) - Blinky",
+            "device": "ATSAM4E16E",
+            "runToMain": true,
+            "svdFile": "${workspaceRoot}/svd/ATSAM4E16E.svd",
+            "preLaunchCommands": [
+                "source debugscript.gdb"
+            ]
+        },
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "jlink",
+            "cwd": "${workspaceRoot}",
+            "executable": "./target/thumbv7em-none-eabihf/debug/examples/external_memory",
+            "name": "Debug (GDB Server) - External Memory",
+            "device": "ATSAM4E16E",
+            "runToMain": true,
+            "svdFile": "${workspaceRoot}/svd/ATSAM4E16E.svd",
+            "preLaunchCommands": [
+                "source debugscript.gdb"
+            ]
+        }
+    ]
+}
