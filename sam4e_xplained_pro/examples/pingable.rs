@@ -7,20 +7,20 @@ use panic_semihosting as _; // panic handler
 use sam4e_xplained_pro::{
     hal::{
         clock::*,
-        delay::{Delay, DelayMs},
         ethernet,
         gpio::*,
         pac::{CorePeripherals, Peripherals},
         watchdog::*,
-        OutputPin,
     },
     Pins,    
 };
 
 use smoltcp::wire::{
-    ArpOperation, ArpPacket, ArpRepr, EthernetAddress, EthernetFrame, EthernetProtocol,
-    EthernetRepr, Ipv4Address,
+    IpAddress, IpCidr,
+    Ipv4Address, Icmpv4Repr, Icmpv4Packet
 };
+use smoltcp::iface::{NeighborCache, EthernetInterfaceBuilder, Routes};
+
 
 #[entry]
 fn main() -> ! {
@@ -61,80 +61,42 @@ fn main() -> ! {
         ),
     );
     let mut pins = Pins::new(gpio_ports);
-    let mut delay = Delay::new(core.SYST);
 
     // Disable the watchdog timer.
     Watchdog::new(peripherals.WDT).disable();
 
     let mut eth = ethernet::Builder::new()
-        .freeze(peripherals.GMAC, clocks.peripheral_clocks.gmac.into_enabled_clock());
+        .freeze::<16, 8>(peripherals.GMAC, clocks.peripheral_clocks.gmac.into_enabled_clock());
 
-    let mut last_status = None;
+    // Create an IP address
+    let mut ip_addrs = [IpCidr::new(IpAddress::v4(192, 168, 69, 1), 24)];
 
+    // Create IP routes
+    let mut routes_storage = [None; 1];
+    let mut routes = Routes::new(&mut routes_storage[..]);
+    let default_v4_gw = Ipv4Address::new(192, 168, 69, 100);
+    routes.add_default_ipv4_route(default_v4_gw).unwrap();
+
+    // Create ethernet interface
+    let mut interface = EthernetInterfaceBuilder::new(eth)
+        .ip_addrs(&mut ip_addrs[..])
+        .routes(routes)
+        .finalize();
+
+    let mut link_detected = false;
     loop {
-        let status = eth.status();
-
-        if last_status
-            .map(|last_status| last_status != status)
-            .unwrap_or(true)
-        {
-            if !status.link_detected() {
-                hprintln!("Ethernet: no link detected").unwrap();
+        let status = interface.device().status();
+        if status.link_detected() != link_detected {
+            if status.link_detected() {
+                hprintln!("Ethernet link is no UP with {} Mbps.", status.speed());
             } else {
-                hprintln!(
-                    "Ethernet: link detected with {} Mbps/{}",
-                    status.speed(),
-                    match status.is_full_duplex() {
-                        true => "FD",
-                        false => "HD",
-                    }
-                )
-                .unwrap();
+                hprintln!("Ethernet link is now DOWN.");
             }
 
-            last_status = Some(status);
+            link_detected = status.link_detected();
         }
 
         if status.link_detected() {
-            const SIZE: usize = 14 + 28; // ETH + ARP
-
-            let src_mac = ethernet::EthernetAddress::from_bytes(&[0x00, 0x00, 0xDE, 0xAD, 0xBE, 0xEF]);
-
-            let arp_buffer = [0; 28];
-            let mut packet =
-                ArpPacket::new_checked(arp_buffer).expect("ArpPacket: buffer size is not correct");
-            let arp = ArpRepr::EthernetIpv4 {
-                operation: ArpOperation::Request,
-                source_hardware_addr: src_mac,
-                source_protocol_addr: Ipv4Address::new(192, 168, 1, 100),
-                target_hardware_addr: EthernetAddress::from_bytes(&[0x00; 6]),
-                target_protocol_addr: Ipv4Address::new(192, 168, 1, 254),
-            };
-            arp.emit(&mut packet);
-
-            let eth_buffer = [0; SIZE]; // ETH + ARP
-            let mut frame = EthernetFrame::new_checked(eth_buffer)
-                .expect("EthernetFrame: buffer size is not correct");
-            let header = EthernetRepr {
-                src_addr: src_mac,
-                dst_addr: EthernetAddress::BROADCAST,
-                ethertype: EthernetProtocol::Arp,
-            };
-            header.emit(&mut frame);
-            frame.payload_mut().copy_from_slice(&packet.into_inner());
-
-            let r = eth.send(SIZE, |buf| {
-                buf[0..SIZE].copy_from_slice(&frame.into_inner());
-            });
-
-            match r {
-                Ok(()) => {
-                    hprintln!("ARP-smoltcp sent").unwrap();
-                }
-                Err(ethernet::TxError::WouldBlock) => hprintln!("ARP failed").unwrap(),
-            }
-        } else {
-            hprintln!("Down").unwrap();
         }
 
         // cortex_m::interrupt::free(|cs| {
