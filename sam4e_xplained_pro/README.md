@@ -3,6 +3,9 @@ Embedded Rust Board Support Crate for the Microchip/Atmel SAM4E_XPlained_Pro dev
 
 NOTE: This crate is still under active development.
 
+## Visual Studio Code Support
+This repository has support for Visual Studio Code in the .vscode subdirectory.  This support requires rust-analyzer to be installed from the Visual Studio Code Extensions panel.
+
 ## License
 
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or

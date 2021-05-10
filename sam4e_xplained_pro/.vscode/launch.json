@@ -4,29 +4,102 @@
         {
             "type": "cortex-debug",
             "request": "launch",
-            "servertype": "jlink",
+            "servertype": "openocd",
             "cwd": "${workspaceRoot}",
-            "executable": "./target/thumbv7em-none-eabihf/debug/examples/blinky",
-            "name": "Debug (GDB Server) - Blinky",
+            "executable": "target/thumbv7em-none-eabihf/debug/examples/blinky",
+            "name": "Blinky",
             "device": "ATSAM4E16E",
             "runToMain": true,
-            "svdFile": "${workspaceRoot}/svd/ATSAM4E16E.svd",
+            "svdFile": "${workspaceRoot}/.vscode/ATSAM4E16E.svd",
+            "configFiles": [
+                "./openocd.cfg"
+            ],
             "preLaunchCommands": [
-                "source debugscript.gdb"
+                "set remotetimeout 5",
+                "set print asm-demangle on",
+                "set backtrace limit 32",
+                
+                "break DefaultHandler",
+                "break HardFault",
+                "break rust_begin_unwind",
+
+                "monitor arm semihosting enable"
             ]
         },
         {
             "type": "cortex-debug",
             "request": "launch",
-            "servertype": "jlink",
+            "servertype": "openocd",
             "cwd": "${workspaceRoot}",
-            "executable": "./target/thumbv7em-none-eabihf/debug/examples/external_memory",
-            "name": "Debug (GDB Server) - External Memory",
+            "executable": "target/thumbv7em-none-eabihf/debug/examples/external_memory",
+            "name": "External Memory",
             "device": "ATSAM4E16E",
             "runToMain": true,
-            "svdFile": "${workspaceRoot}/svd/ATSAM4E16E.svd",
+            "svdFile": "${workspaceRoot}/.vscode/ATSAM4E16E.svd",
+            "configFiles": [
+                "./openocd.cfg"
+            ],
             "preLaunchCommands": [
-                "source debugscript.gdb"
+                "set remotetimeout 5",
+                "set print asm-demangle on",
+                "set backtrace limit 32",
+                
+                "break DefaultHandler",
+                "break HardFault",
+                "break rust_begin_unwind",
+
+                "monitor arm semihosting enable"
+            ]
+        },
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceRoot}",
+            "executable": "target/thumbv7em-none-eabihf/debug/examples/pingable",
+            "name": "Pingable Network",
+            "device": "ATSAM4E16E",
+            "runToMain": true,
+            "svdFile": "${workspaceRoot}/.vscode/ATSAM4E16E.svd",
+            "configFiles": [
+                "./openocd.cfg"
+            ],
+            "preLaunchCommands": [
+                "set remotetimeout 5",
+                "set print asm-demangle on",
+                "set backtrace limit 32",
+
+                "break DefaultHandler",
+                "break HardFault",
+                "break Reset",
+                "break rust_begin_unwind",
+
+                "monitor arm semihosting enable"
+            ]
+        },
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceRoot}",
+            "executable": "target/thumbv7em-none-eabihf/debug/examples/serial",
+            "name": "Serial Port",
+            "device": "ATSAM4E16E",
+            "runToMain": true,
+            "svdFile": "${workspaceRoot}/.vscode/ATSAM4E16E.svd",
+            "configFiles": [
+                "./openocd.cfg"
+            ],
+            "preLaunchCommands": [
+                "set remotetimeout 5",
+                "set print asm-demangle on",
+                "set backtrace limit 32",
+                
+                "break DefaultHandler",
+                "break HardFault",
+                "break rust_begin_unwind",
+
+                "monitor arm semihosting enable"
             ]
         }
     ]

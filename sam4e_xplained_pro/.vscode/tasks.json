@@ -3,16 +3,7 @@
 	"tasks": [
 		{
 			"type": "cargo",
-			"subcommand": "clean",
-			"problemMatcher": [
-				"$rustc"
-			],
-			"group": "build",
-			"label": "Rust: cargo clean - sam4e_xplained_pro"
-		},
-		{
-			"type": "cargo",
-			"subcommand": "build",
+			"command": "build --examples",
 			"problemMatcher": [
 				"$rustc"
 			],
@@ -20,7 +11,23 @@
 				"kind": "build",
 				"isDefault": true
 			},
-			"label": "Rust: cargo build - sam4e_xplained_pro"
-		}
+			"label": "rust: cargo build examples"
+		},
+		{
+			"type": "cargo",
+			"command": "build",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "rust: cargo build library only"
+		},
+		{
+			"type": "cargo",
+			"command": "clean",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "rust: cargo clean"
+		},
 	]
 }
