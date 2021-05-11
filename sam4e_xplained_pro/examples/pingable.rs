@@ -40,7 +40,11 @@ fn main() -> ! {
 
     // Allocate the Rx and Tx descriptor blocks (and associated buffers)
     let rx = ethernet::RxDescriptorBlock::<8>::new();
+    rx.setup_dma(&peripherals.GMAC);
+
     let tx = ethernet::TxDescriptorBlock::<4>::new();
+    tx.setup_dma(&peripherals.GMAC);
+
     let eth = ethernet::Builder::new()
         .freeze(
             peripherals.GMAC, 
