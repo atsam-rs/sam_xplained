@@ -3,6 +3,7 @@
 
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
+use once_cell::unsync::Lazy;
 use panic_semihosting as _; // panic handler
 use sam4e_xplained_pro::{
     hal::{
@@ -18,6 +19,14 @@ use smoltcp::iface::{EthernetInterfaceBuilder, Routes};
 use smoltcp::socket::{SocketSet, SocketSetItem, RawSocketBuffer, RawPacketMetadata};
 use smoltcp::time::Instant;
 use smoltcp::dhcp::Dhcpv4Client;
+
+static mut RXDESCRIPTORBLOCK: Lazy<ethernet::RxDescriptorBlock<8>> = Lazy::new(|| {
+    ethernet::RxDescriptorBlock::<8>::new()
+});
+
+static mut TXDESCRIPTORBLOCK: Lazy<ethernet::TxDescriptorBlock<4>> = Lazy::new(|| {
+    ethernet::TxDescriptorBlock::<4>::new()
+});
 
 #[entry]
 fn main() -> ! {
@@ -38,19 +47,22 @@ fn main() -> ! {
     // Disable the watchdog timer.
     Watchdog::new(peripherals.WDT).disable();
 
-    // Allocate the Rx and Tx descriptor blocks (and associated buffers)
-    let rx = ethernet::RxDescriptorBlock::<8>::new();
-    rx.setup_dma(&peripherals.GMAC);
+    //
+    // Ethernet controller setup
+    //
+    let eth = {
+        unsafe {
+            RXDESCRIPTORBLOCK.setup_dma(&peripherals.GMAC);
+            TXDESCRIPTORBLOCK.setup_dma(&peripherals.GMAC);
 
-    let tx = ethernet::TxDescriptorBlock::<4>::new();
-    tx.setup_dma(&peripherals.GMAC);
-
-    let eth = ethernet::Builder::new()
-        .freeze(
-            peripherals.GMAC, 
-            clocks.peripheral_clocks.gmac.into_enabled_clock(), 
-            &rx,
-            &tx);
+            ethernet::Builder::new()
+                .freeze(
+                    peripherals.GMAC, 
+                    clocks.peripheral_clocks.gmac.into_enabled_clock(), 
+                    &mut *RXDESCRIPTORBLOCK,
+                    &mut *TXDESCRIPTORBLOCK)
+        }
+    };
 
     let mut ip_addrs = [IpCidr::new(Ipv4Address::UNSPECIFIED.into(), 0)];
     let mut routes_storage = [None; 1];
