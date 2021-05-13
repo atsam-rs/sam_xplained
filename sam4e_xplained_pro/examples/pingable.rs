@@ -101,7 +101,7 @@ fn main() -> ! {
         let status = interface.device().status();
         if status.link_detected() != link_detected {
             if status.link_detected() {
-                hprintln!("Ethernet link is no UP with {} Mbps.", status.speed()).unwrap();
+                hprintln!("Ethernet link is now UP with {} Mbps.", status.speed()).unwrap();
             } else {
                 hprintln!("Ethernet link is now DOWN.").unwrap();
             }
