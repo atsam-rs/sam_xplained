@@ -3,7 +3,6 @@
 
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
-use once_cell::unsync::Lazy;
 use panic_semihosting as _; // panic handler
 use sam4e_xplained_pro::{
     hal::{
@@ -15,18 +14,14 @@ use sam4e_xplained_pro::{
 };
 
 use smoltcp::wire::{Ipv4Address, IpCidr, Ipv4Cidr};
-use smoltcp::iface::{EthernetInterfaceBuilder, Routes};
+use smoltcp::iface::{NeighborCache, EthernetInterfaceBuilder, Routes};
 use smoltcp::socket::{SocketSet, SocketSetItem, RawSocketBuffer, RawPacketMetadata};
 use smoltcp::time::Instant;
 use smoltcp::dhcp::Dhcpv4Client;
+use smoltcp::wire::EthernetAddress;
 
-static mut RXDESCRIPTORBLOCK: Lazy<ethernet::RxDescriptorBlock<8>> = Lazy::new(|| {
-    ethernet::RxDescriptorBlock::<8>::new()
-});
-
-static mut TXDESCRIPTORBLOCK: Lazy<ethernet::TxDescriptorBlock<4>> = Lazy::new(|| {
-    ethernet::TxDescriptorBlock::<4>::new()
-});
+static mut RXDESCRIPTORBLOCK: ethernet::RxDescriptorBlock<8> = ethernet::RxDescriptorBlock::<8>::const_default();
+static mut TXDESCRIPTORBLOCK: ethernet::TxDescriptorBlock<4> = ethernet::TxDescriptorBlock::<4>::const_default();
 
 #[entry]
 fn main() -> ! {
@@ -52,15 +47,15 @@ fn main() -> ! {
     //
     let eth = {
         unsafe {
-            RXDESCRIPTORBLOCK.setup_dma(&peripherals.GMAC);
-            TXDESCRIPTORBLOCK.setup_dma(&peripherals.GMAC);
+            RXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
+            TXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
 
             ethernet::Builder::new()
                 .freeze(
                     peripherals.GMAC, 
                     clocks.peripheral_clocks.gmac.into_enabled_clock(), 
-                    &mut *RXDESCRIPTORBLOCK,
-                    &mut *TXDESCRIPTORBLOCK)
+                    &mut RXDESCRIPTORBLOCK,
+                    &mut TXDESCRIPTORBLOCK)
         }
     };
 
@@ -68,8 +63,15 @@ fn main() -> ! {
     let mut routes_storage = [None; 1];
     let routes = Routes::new(&mut routes_storage[..]);
     
+    // Are these strictly necessary?
+    let ethernet_addr = EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]);
+    let mut neighbor_cache_entries = [None; 8];
+    let mut neighbor_cache = NeighborCache::new(&mut neighbor_cache_entries[..]);
+
     // Create ethernet interface
     let mut interface = EthernetInterfaceBuilder::new(eth)
+        .ethernet_addr(ethernet_addr)
+        .neighbor_cache(neighbor_cache)
         .ip_addrs(&mut ip_addrs[..])
         .routes(routes)
         .finalize();
@@ -95,18 +97,18 @@ fn main() -> ! {
     let mut dhcp = Dhcpv4Client::new(&mut sockets, dhcp_rx_buffer, dhcp_tx_buffer, Instant::from_millis(0));
     let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
     
-    let mut link_detected = false;
+    let mut link_detected: Option<bool> = None;
 
     loop {
         let status = interface.device().status();
-        if status.link_detected() != link_detected {
+        if link_detected.is_none() || status.link_detected() != link_detected.unwrap() {
             if status.link_detected() {
                 hprintln!("Ethernet link is now UP with {} Mbps.", status.speed()).unwrap();
             } else {
                 hprintln!("Ethernet link is now DOWN.").unwrap();
             }
 
-            link_detected = status.link_detected();
+            link_detected = Some(status.link_detected());
         }
 
         if status.link_detected() {
@@ -120,6 +122,6 @@ fn main() -> ! {
                 hprintln!("DHCP: {:?}", e).unwrap();
                 None
             });
-        }
+       }
     }
 }
