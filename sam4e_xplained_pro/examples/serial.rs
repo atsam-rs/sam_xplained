@@ -67,7 +67,7 @@ fn main() -> ! {
             clocks.peripheral_clocks.pio_e.into_enabled_clock(),
         ),
     );
-    let mut pins = Pins::new(gpio_ports);
+    let mut pins = Pins::new(gpio_ports, &peripherals.MATRIX);
     let mut delay = Delay::new(core.SYST);
 
     // Disable the watchdog timer.

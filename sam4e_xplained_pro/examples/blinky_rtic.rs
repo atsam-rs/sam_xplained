@@ -67,7 +67,7 @@ const APP: () = {
                 clocks.peripheral_clocks.pio_e.into_enabled_clock(),
             ),
         );
-        let mut pins = Pins::new(gpio_ports);
+        let mut pins = Pins::new(gpio_ports, &peripherals.MATRIX);
 
         // Disable the watchdog timer.
         Watchdog::new(peripherals.WDT).disable();
