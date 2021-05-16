@@ -65,3 +65,5 @@ define_pin_map! {
 
     pin a23 = a25<PfC, into_peripheral_function_c>,
 }
+
+pub const PHYADDRESS: u8 = 0;

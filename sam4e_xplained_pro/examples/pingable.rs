@@ -11,6 +11,7 @@ use sam4e_xplained_pro::{
         pac::{CorePeripherals, Peripherals},
         watchdog::*,
     },
+    PHYADDRESS,
 };
 
 use smoltcp::wire::{Ipv4Address, IpCidr, Ipv4Cidr};
@@ -51,7 +52,7 @@ fn main() -> ! {
             TXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
 
             ethernet::Builder::new()
-                .freeze(
+                .freeze::<_, _, PHYADDRESS>(
                     peripherals.GMAC, 
                     clocks.peripheral_clocks.gmac.into_enabled_clock(), 
                     &mut RXDESCRIPTORBLOCK,
@@ -95,23 +96,22 @@ fn main() -> ! {
     );
 
     let mut dhcp = Dhcpv4Client::new(&mut sockets, dhcp_rx_buffer, dhcp_tx_buffer, Instant::from_millis(0));
-    let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
-    
-    let mut link_detected: Option<bool> = None;
+//    let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
 
+    let mut previous_link_state = None;
     loop {
-        let status = interface.device().status();
-        if link_detected.is_none() || status.link_detected() != link_detected.unwrap() {
-            if status.link_detected() {
-                hprintln!("Ethernet link is now UP with {} Mbps.", status.speed()).unwrap();
+        let link_state = interface.device().link_state();
+        if previous_link_state.is_none() || link_state != previous_link_state {
+            if link_state.is_some() {
+                hprintln!("Ethernet link is now UP with {} Mbps.", link_state.unwrap().0).unwrap();
             } else {
                 hprintln!("Ethernet link is now DOWN.").unwrap();
             }
 
-            link_detected = Some(status.link_detected());
+            previous_link_state = link_state;
         }
 
-        if status.link_detected() {
+        if link_state.is_some() {
             let timestamp = Instant::from_millis(0);
             interface.poll(&mut sockets, timestamp)
                 .map(|_| ())
