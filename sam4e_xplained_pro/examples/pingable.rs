@@ -8,27 +8,32 @@ use sam4e_xplained_pro::{
     hal::{
         clock::*,
         ethernet,
+        gpio::*,
         pac::{CorePeripherals, Peripherals},
         watchdog::*,
     },
     PHYADDRESS,
+    Pins,
 };
 
-use smoltcp::wire::{Ipv4Address, IpCidr, Ipv4Cidr};
-use smoltcp::iface::{NeighborCache, EthernetInterfaceBuilder, Routes};
+use smoltcp::wire::{Ipv4Address, IpCidr};
+use smoltcp::iface::{InterfaceBuilder, Routes};
 use smoltcp::socket::{SocketSet, SocketSetItem, RawSocketBuffer, RawPacketMetadata};
 use smoltcp::time::Instant;
 use smoltcp::dhcp::Dhcpv4Client;
-use smoltcp::wire::EthernetAddress;
 
-static mut RXDESCRIPTORBLOCK: ethernet::RxDescriptorBlock<8> = ethernet::RxDescriptorBlock::<8>::const_default();
-static mut TXDESCRIPTORBLOCK: ethernet::TxDescriptorBlock<4> = ethernet::TxDescriptorBlock::<4>::const_default();
+// Number of preallocated descriptors for both receive and transmit.
+const RXDESCRIPTOR_COUNT: usize = 8;
+const TXDESCRIPTOR_COUNT: usize = 4;
+
+static mut RXDESCRIPTORBLOCK: ethernet::RxDescriptorBlock<RXDESCRIPTOR_COUNT> = ethernet::RxDescriptorBlock::<RXDESCRIPTOR_COUNT>::const_default();
+static mut TXDESCRIPTORBLOCK: ethernet::TxDescriptorBlock<TXDESCRIPTOR_COUNT> = ethernet::TxDescriptorBlock::<TXDESCRIPTOR_COUNT>::const_default();
 
 #[entry]
 fn main() -> ! {
     hprintln!("Network Pingable example started").ok();
 
-    let core = CorePeripherals::take().unwrap();
+    let _core = CorePeripherals::take().unwrap();
     let peripherals = Peripherals::take().unwrap();
     let clocks = ClockController::new(
         peripherals.PMC,
@@ -37,6 +42,29 @@ fn main() -> ! {
         MainClock::RcOscillator12Mhz,
         SlowClock::RcOscillator32Khz,
     );
+    let gpio_ports = Ports::new(
+        (
+            peripherals.PIOA,
+            clocks.peripheral_clocks.pio_a.into_enabled_clock(),
+        ),
+        (
+            peripherals.PIOB,
+            clocks.peripheral_clocks.pio_b.into_enabled_clock(),
+        ),
+        (
+            peripherals.PIOC,
+            clocks.peripheral_clocks.pio_c.into_enabled_clock(),
+        ),
+        (
+            peripherals.PIOD,
+            clocks.peripheral_clocks.pio_d.into_enabled_clock(),
+        ),
+        (
+            peripherals.PIOE,
+            clocks.peripheral_clocks.pio_e.into_enabled_clock(),
+        ),
+    );
+    let mut pins = Pins::new(gpio_ports, &peripherals.MATRIX);
 
     hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
 
@@ -52,9 +80,20 @@ fn main() -> ! {
             TXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
 
             ethernet::Builder::new()
-                .freeze::<_, _, PHYADDRESS>(
+                .set_phy_address(PHYADDRESS)
+                .freeze(
                     peripherals.GMAC, 
                     clocks.peripheral_clocks.gmac.into_enabled_clock(), 
+                    pins.grefck,
+                    pins.gtxen,
+                    pins.gtx0,
+                    pins.gtx1,
+                    pins.gcrsdv,
+                    pins.grx0,
+                    pins.grx1,
+                    pins.grxer,
+                    pins.gmdc,
+                    pins.gmdio,
                     &mut RXDESCRIPTORBLOCK,
                     &mut TXDESCRIPTORBLOCK)
         }
@@ -64,15 +103,8 @@ fn main() -> ! {
     let mut routes_storage = [None; 1];
     let routes = Routes::new(&mut routes_storage[..]);
     
-    // Are these strictly necessary?
-    let ethernet_addr = EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]);
-    let mut neighbor_cache_entries = [None; 8];
-    let mut neighbor_cache = NeighborCache::new(&mut neighbor_cache_entries[..]);
-
     // Create ethernet interface
-    let mut interface = EthernetInterfaceBuilder::new(eth)
-        .ethernet_addr(ethernet_addr)
-        .neighbor_cache(neighbor_cache)
+    let mut interface = InterfaceBuilder::new(eth)
         .ip_addrs(&mut ip_addrs[..])
         .routes(routes)
         .finalize();
@@ -96,7 +128,7 @@ fn main() -> ! {
     );
 
     let mut dhcp = Dhcpv4Client::new(&mut sockets, dhcp_rx_buffer, dhcp_tx_buffer, Instant::from_millis(0));
-//    let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
+///    let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
 
     let mut previous_link_state = None;
     loop {
@@ -117,7 +149,7 @@ fn main() -> ! {
                 .map(|_| ())
                 .unwrap_or_else(|e| hprintln!("Poll: {:?}", e).unwrap());
 
-            let config = dhcp.poll(&mut interface, &mut sockets, timestamp)
+            let _config = dhcp.poll(&mut interface, &mut sockets, timestamp)
             .unwrap_or_else(|e| {
                 hprintln!("DHCP: {:?}", e).unwrap();
                 None

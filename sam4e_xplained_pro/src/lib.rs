@@ -64,6 +64,19 @@ define_pin_map! {
     pin a22 = c17<PfA, into_peripheral_function_a>,
 
     pin a23 = a25<PfC, into_peripheral_function_c>,
+
+    // Ethernet MAC (GMAC)
+    pin grefck  = d0<PfA, into_peripheral_function_a>,
+    pin gtxen   = d1<PfA, into_peripheral_function_a>,
+    pin gtx0    = d2<PfA, into_peripheral_function_a>,
+    pin gtx1    = d3<PfA, into_peripheral_function_a>,
+    pin gcrsdv  = d4<PfA, into_peripheral_function_a>,
+    pin grx0    = d5<PfA, into_peripheral_function_a>,
+    pin grx1    = d6<PfA, into_peripheral_function_a>,
+    pin grxer   = d7<PfA, into_peripheral_function_a>,
+    pin gmdc    = d8<PfA, into_peripheral_function_a>,
+    pin gmdio   = d9<PfA, into_peripheral_function_a>,
 }
 
+// The Ethernet PHY address on the SAM4E Xplained Pro
 pub const PHYADDRESS: u8 = 0;

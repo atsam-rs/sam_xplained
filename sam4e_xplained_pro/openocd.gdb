@@ -6,6 +6,9 @@ target extended-remote :3333
 #monitor semihosting enable
 #monitor semihosting IOClient 2
 
+# ATSAM4E has 8 hardware breakpoints
+set remote hardware-breakpoint-limit 8
+
 # print demangled symbols
 set print asm-demangle on
 
@@ -13,7 +16,7 @@ set print asm-demangle on
 set backtrace limit 32
 
 # detect unhandled exceptions, hard faults and panics
-break DefaultHandler
+# break DefaultHandler
 break HardFault
 break rust_begin_unwind
 

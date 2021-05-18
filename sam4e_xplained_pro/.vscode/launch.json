@@ -68,10 +68,9 @@
                 "set remotetimeout 5",
                 "set print asm-demangle on",
                 "set backtrace limit 32",
+                "set remote hardware-breakpoint-limit 8",
 
-                "break DefaultHandler",
                 "break HardFault",
-                "break Reset",
                 "break rust_begin_unwind",
 
                 "monitor arm semihosting enable"
