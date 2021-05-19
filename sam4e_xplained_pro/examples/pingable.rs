@@ -15,9 +15,9 @@ use sam4e_xplained_pro::{
     PHYADDRESS,
     Pins,
 };
-
+use aligned::{Aligned, A4};
 use smoltcp::wire::{Ipv4Address, IpCidr};
-use smoltcp::iface::{InterfaceBuilder, Routes};
+use smoltcp::iface::{EthernetInterfaceBuilder, Routes, NeighborCache};
 use smoltcp::socket::{SocketSet, SocketSetItem, RawSocketBuffer, RawPacketMetadata};
 use smoltcp::time::Instant;
 use smoltcp::dhcp::Dhcpv4Client;
@@ -26,8 +26,8 @@ use smoltcp::dhcp::Dhcpv4Client;
 const RXDESCRIPTOR_COUNT: usize = 8;
 const TXDESCRIPTOR_COUNT: usize = 4;
 
-static mut RXDESCRIPTORBLOCK: ethernet::RxDescriptorBlock<RXDESCRIPTOR_COUNT> = ethernet::RxDescriptorBlock::<RXDESCRIPTOR_COUNT>::const_default();
-static mut TXDESCRIPTORBLOCK: ethernet::TxDescriptorBlock<TXDESCRIPTOR_COUNT> = ethernet::TxDescriptorBlock::<TXDESCRIPTOR_COUNT>::const_default();
+static mut RXDESCRIPTORBLOCK: Aligned<A4, ethernet::RxDescriptorBlock<RXDESCRIPTOR_COUNT>> = Aligned(ethernet::RxDescriptorBlock::<RXDESCRIPTOR_COUNT>::const_default());
+static mut TXDESCRIPTORBLOCK: Aligned<A4, ethernet::TxDescriptorBlock<TXDESCRIPTOR_COUNT>> = Aligned(ethernet::TxDescriptorBlock::<TXDESCRIPTOR_COUNT>::const_default());
 
 #[entry]
 fn main() -> ! {
@@ -42,6 +42,12 @@ fn main() -> ! {
         MainClock::RcOscillator12Mhz,
         SlowClock::RcOscillator32Khz,
     );
+
+    hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
+
+    // Disable the watchdog timer.
+    Watchdog::new(peripherals.WDT).disable();
+
     let gpio_ports = Ports::new(
         (
             peripherals.PIOA,
@@ -64,22 +70,19 @@ fn main() -> ! {
             clocks.peripheral_clocks.pio_e.into_enabled_clock(),
         ),
     );
-    let mut pins = Pins::new(gpio_ports, &peripherals.MATRIX);
-
-    hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
-
-    // Disable the watchdog timer.
-    Watchdog::new(peripherals.WDT).disable();
+    let pins = Pins::new(gpio_ports, &peripherals.MATRIX);
 
     //
     // Ethernet controller setup
     //
+    let ethernet_address = ethernet::EthernetAddress::default();
     let eth = {
         unsafe {
             RXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
             TXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
 
             ethernet::Builder::new()
+                .set_ethernet_address(ethernet_address)
                 .set_phy_address(PHYADDRESS)
                 .freeze(
                     peripherals.GMAC, 
@@ -94,8 +97,8 @@ fn main() -> ! {
                     pins.grxer,
                     pins.gmdc,
                     pins.gmdio,
-                    &mut RXDESCRIPTORBLOCK,
-                    &mut TXDESCRIPTORBLOCK)
+                    &mut *RXDESCRIPTORBLOCK,
+                    &mut *TXDESCRIPTORBLOCK)
         }
     };
 
@@ -103,8 +106,13 @@ fn main() -> ! {
     let mut routes_storage = [None; 1];
     let routes = Routes::new(&mut routes_storage[..]);
     
+    let mut neighbor_storage = [None; 16];
+    let neighbor_cache = NeighborCache::new(&mut neighbor_storage[..]);
+
     // Create ethernet interface
-    let mut interface = InterfaceBuilder::new(eth)
+    let mut interface = EthernetInterfaceBuilder::new(eth)
+        .neighbor_cache(neighbor_cache)
+        .ethernet_addr(smoltcp::wire::EthernetAddress::from_bytes(&ethernet_address.as_bytes()))
         .ip_addrs(&mut ip_addrs[..])
         .routes(routes)
         .finalize();
