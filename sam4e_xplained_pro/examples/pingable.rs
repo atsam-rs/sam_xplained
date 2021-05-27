@@ -1,12 +1,14 @@
 #![no_std]
 #![no_main]
 
-use cortex_m_rt::entry;
+use cortex_m_rt::{entry, exception};
+use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m_semihosting::hprintln;
 use panic_semihosting as _; // panic handler
 use sam4e_xplained_pro::{
     hal::{
         clock::*,
+        delay::*,
         ethernet,
         gpio::*,
         pac::{CorePeripherals, Peripherals},
@@ -23,17 +25,17 @@ use smoltcp::time::Instant;
 use smoltcp::dhcp::Dhcpv4Client;
 
 // Number of preallocated descriptors for both receive and transmit.
-const RXDESCRIPTOR_COUNT: usize = 8;
-const TXDESCRIPTOR_COUNT: usize = 4;
+const RXDESCRIPTOR_COUNT: usize = 1;
+const TXDESCRIPTOR_COUNT: usize = 1;
 
-static mut RXDESCRIPTORBLOCK: Aligned<A4, ethernet::RxDescriptorBlock<RXDESCRIPTOR_COUNT>> = Aligned(ethernet::RxDescriptorBlock::<RXDESCRIPTOR_COUNT>::const_default());
-static mut TXDESCRIPTORBLOCK: Aligned<A4, ethernet::TxDescriptorBlock<TXDESCRIPTOR_COUNT>> = Aligned(ethernet::TxDescriptorBlock::<TXDESCRIPTOR_COUNT>::const_default());
+static mut RXDESCRIPTORTABLE: Aligned<A4, ethernet::RxDescriptorTable<RXDESCRIPTOR_COUNT>> = Aligned(ethernet::RxDescriptorTable::<RXDESCRIPTOR_COUNT>::const_default());
+static mut TXDESCRIPTORTABLE: Aligned<A4, ethernet::TxDescriptorTable<TXDESCRIPTOR_COUNT>> = Aligned(ethernet::TxDescriptorTable::<TXDESCRIPTOR_COUNT>::const_default());
 
 #[entry]
 fn main() -> ! {
     hprintln!("Network Pingable example started").ok();
 
-    let _core = CorePeripherals::take().unwrap();
+    let core = CorePeripherals::take().unwrap();
     let peripherals = Peripherals::take().unwrap();
     let clocks = ClockController::new(
         peripherals.PMC,
@@ -44,6 +46,9 @@ fn main() -> ! {
     );
 
     hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
+
+    // Setup SysTick to interrupt once per millisecond
+    let _ = Delay::new(core.SYST);
 
     // Disable the watchdog timer.
     Watchdog::new(peripherals.WDT).disable();
@@ -78,13 +83,10 @@ fn main() -> ! {
     let ethernet_address = ethernet::EthernetAddress::default();
     let eth = {
         unsafe {
-            RXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
-            TXDESCRIPTORBLOCK.initialize(&peripherals.GMAC);
-
             ethernet::Builder::new()
                 .set_ethernet_address(ethernet_address)
                 .set_phy_address(PHYADDRESS)
-                .freeze(
+                .build(
                     peripherals.GMAC, 
                     clocks.peripheral_clocks.gmac.into_enabled_clock(), 
                     pins.grefck,
@@ -97,8 +99,8 @@ fn main() -> ! {
                     pins.grxer,
                     pins.gmdc,
                     pins.gmdio,
-                    &mut *RXDESCRIPTORBLOCK,
-                    &mut *TXDESCRIPTORBLOCK)
+                    &mut *RXDESCRIPTORTABLE,
+                    &mut *TXDESCRIPTORTABLE)
         }
     };
 
@@ -135,7 +137,7 @@ fn main() -> ! {
         &mut dhcp_tx_payload_buffer[..]
     );
 
-    let mut dhcp = Dhcpv4Client::new(&mut sockets, dhcp_rx_buffer, dhcp_tx_buffer, Instant::from_millis(0));
+    let mut dhcp = Dhcpv4Client::new(&mut sockets, dhcp_rx_buffer, dhcp_tx_buffer, Instant::from_millis(Delay::current_tick() as i64));
 ///    let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
 
     let mut previous_link_state = None;
@@ -152,10 +154,10 @@ fn main() -> ! {
         }
 
         if link_state.is_some() {
-            let timestamp = Instant::from_millis(0);
+            let timestamp = Instant::from_millis(Delay::current_tick() as i64);
             interface.poll(&mut sockets, timestamp)
                 .map(|_| ())
-                .unwrap_or_else(|e| hprintln!("Poll: {:?}", e).unwrap());
+                .unwrap_or_else(|e| hprintln!("Poll {:?}", e).unwrap());
 
             let _config = dhcp.poll(&mut interface, &mut sockets, timestamp)
             .unwrap_or_else(|e| {
