@@ -28,8 +28,8 @@ use smoltcp::dhcp::Dhcpv4Client;
 const RXDESCRIPTOR_COUNT: usize = 1;
 const TXDESCRIPTOR_COUNT: usize = 1;
 
-static mut RXDESCRIPTORTABLE: Aligned<A4, ethernet::RxDescriptorTable<RXDESCRIPTOR_COUNT>> = Aligned(ethernet::RxDescriptorTable::<RXDESCRIPTOR_COUNT>::const_default());
-static mut TXDESCRIPTORTABLE: Aligned<A4, ethernet::TxDescriptorTable<TXDESCRIPTOR_COUNT>> = Aligned(ethernet::TxDescriptorTable::<TXDESCRIPTOR_COUNT>::const_default());
+static mut RXDESCRIPTORTABLE: Aligned<A4, ethernet::RxDescriptorTable<8>> = Aligned(ethernet::RxDescriptorTable::new());
+static mut TXDESCRIPTORTABLE: Aligned<A4, ethernet::TxDescriptorTable<4>> = Aligned(ethernet::TxDescriptorTable::new());
 
 #[entry]
 fn main() -> ! {
@@ -83,7 +83,7 @@ fn main() -> ! {
     let ethernet_address = ethernet::EthernetAddress::default();
     let eth = {
         unsafe {
-            ethernet::Builder::new()
+            ethernet::ControllerBuilder::new()
                 .set_ethernet_address(ethernet_address)
                 .set_phy_address(PHYADDRESS)
                 .build(
@@ -138,7 +138,7 @@ fn main() -> ! {
     );
 
     let mut dhcp = Dhcpv4Client::new(&mut sockets, dhcp_rx_buffer, dhcp_tx_buffer, Instant::from_millis(Delay::current_tick() as i64));
-///    let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
+    ///    let mut prev_cidr = Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0);
 
     let mut previous_link_state = None;
     loop {
@@ -164,6 +164,6 @@ fn main() -> ! {
                 hprintln!("DHCP: {:?}", e).unwrap();
                 None
             });
-       }
+        }
     }
 }
