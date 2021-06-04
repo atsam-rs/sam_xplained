@@ -62,7 +62,7 @@ fn main() -> ! {
             clocks.peripheral_clocks.pio_e.into_enabled_clock(),
         ),
     );
-    let mut pins = Pins::new(gpio_ports, &peripherals.MATRIX);
+    let pins = Pins::new(gpio_ports, &peripherals.MATRIX);
 
     let smc = Smc::new(
         clocks.peripheral_clocks.smc.into_enabled_clock(),
@@ -76,30 +76,9 @@ fn main() -> ! {
         ),
         // Address Pins
         (
-            pins.a0,
-            pins.a1,
-            pins.a2,
-            pins.a3,
-            pins.a4,
-            pins.a5,
-            pins.a6,
-            pins.a7,
-            pins.a8,
-            pins.a9,
-            pins.a10,
-            pins.a11,
-            pins.a12,
-            pins.a13,
-            pins.a14,
-            pins.a15,
-            pins.a16,
-            pins.a17,
-            pins.a18,
-            pins.a19,
-            pins.a20,
-            pins.a21,
-            pins.a22,
-            pins.a23,
+            pins.a0, pins.a1, pins.a2, pins.a3, pins.a4, pins.a5, pins.a6, pins.a7, pins.a8,
+            pins.a9, pins.a10, pins.a11, pins.a12, pins.a13, pins.a14, pins.a15, pins.a16,
+            pins.a17, pins.a18, pins.a19, pins.a20, pins.a21, pins.a22, pins.a23,
         ),
     );
 

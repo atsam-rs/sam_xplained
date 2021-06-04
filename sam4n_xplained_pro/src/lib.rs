@@ -3,7 +3,7 @@
 pub use atsam4_hal as hal;
 use paste::paste;
 
-use atsam4_hal::{define_pin_map, gpio::*};
+use atsam4_hal::{define_pin_map, gpio::*, pac::MATRIX};
 
 define_pin_map! {
     struct Pins,

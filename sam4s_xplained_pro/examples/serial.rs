@@ -1,13 +1,16 @@
 #![no_std]
 #![no_main]
 
+#[macro_use(block)]
+extern crate nb;
+
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
+use cortex_m_systick_countdown::{MillisCountDown, PollingSysTick, SysTickCalibration};
 use panic_semihosting as _; // panic handler
 use sam4s_xplained_pro::{
     hal::{
         clock::*,
-        delay::{Delay, DelayMs},
         gpio::*,
         pac::{CorePeripherals, Peripherals},
         serial::Serial1,
@@ -33,6 +36,11 @@ fn main() -> ! {
         SlowClock::RcOscillator32Khz,
     );
 
+    let ticker = PollingSysTick::new(
+        core.SYST,
+        &SysTickCalibration::from_clock_hz(get_master_clock_frequency().0),
+    );
+
     // Display why a processor reset occured.
     match peripherals.RSTC.sr.read().rsttyp().bits() {
         0 => hprintln!("Reset cause: First power up reset"),
@@ -43,6 +51,8 @@ fn main() -> ! {
         _ => hprintln!("Reset cause: RESERVED RESET VALUE!!"),
     }
     .ok();
+
+    hprintln!("CPU Clock: {}", get_master_clock_frequency().0).ok();
 
     let gpio_ports = Ports::new(
         (
@@ -58,8 +68,7 @@ fn main() -> ! {
             clocks.peripheral_clocks.pio_c.into_enabled_clock(),
         ),
     );
-    let mut pins = Pins::new(gpio_ports);
-    let mut delay = Delay::new(core.SYST);
+    let mut pins = Pins::new(gpio_ports, &peripherals.MATRIX);
 
     // Disable the watchdog timer.
     Watchdog::new(peripherals.WDT).disable();
@@ -73,11 +82,16 @@ fn main() -> ! {
         None,
     );
 
+    let mut counter = MillisCountDown::new(&ticker);
+
     loop {
         serial_port.write_string_blocking("Hello from the serial port!\r\n");
+        counter.start_ms(1000);
         pins.led0.set_low().ok();
-        delay.delay_ms(1000u32);
+        block!(counter.wait_ms()).unwrap();
+
+        counter.start_ms(1000);
         pins.led0.set_high().ok();
-        delay.delay_ms(1000u32);
+        block!(counter.wait_ms()).unwrap();
     }
 }
