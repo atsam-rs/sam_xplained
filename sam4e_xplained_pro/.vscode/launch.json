@@ -18,6 +18,7 @@
                 "set remotetimeout 5",
                 "set print asm-demangle on",
                 "set backtrace limit 32",
+                "set output-radix 16",
                 
                 "break DefaultHandler",
                 "break HardFault",
@@ -43,6 +44,7 @@
                 "set remotetimeout 5",
                 "set print asm-demangle on",
                 "set backtrace limit 32",
+                "set output-radix 16",
                 
                 "break DefaultHandler",
                 "break HardFault",
@@ -68,6 +70,8 @@
                 "set remotetimeout 5",
                 "set print asm-demangle on",
                 "set backtrace limit 32",
+                "set output-radix 16",
+
                 "set remote hardware-breakpoint-limit 8",
 
                 "break HardFault",
@@ -93,6 +97,7 @@
                 "set remotetimeout 5",
                 "set print asm-demangle on",
                 "set backtrace limit 32",
+                "set output-radix 16",
                 
                 "break DefaultHandler",
                 "break HardFault",
